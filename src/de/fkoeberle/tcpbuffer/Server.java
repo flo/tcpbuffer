@@ -1,98 +1,121 @@
 package de.fkoeberle.tcpbuffer;
 
-import static java.util.logging.Logger.getLogger;
-
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
-	private static int BUFFER_SIZE = 32 * 1024;
-	private static Logger LOG = getLogger(Server.class.getCanonicalName());
+	private boolean hosting;
+	private final List<HostingListener> hostingListener = new ArrayList<HostingListener>();
+	private final List<EventListener> eventListener = new ArrayList<EventListener>();
+	private final List<ServerStateListener> serverStateListener = new ArrayList<ServerStateListener>();
+	private ServerSocket serverSocket;
 
-	public static void main(String[] args) throws IOException {
-		if (args.length != 4) {
-			System.err
-					.println("Require 4 args: realServer realServerPort newPort bufferSize");
-			System.err.println("If you are host this could like this:");
-			System.err.println("localhost 25565 4000 50");
-			System.err.println("If you are client this could look like this:");
-			System.err.println("localhost 4000 25565 50");
-			System.err
-					.println("The host has in that example to make sure that he can be reached on port 4000");
-			System.err
-					.println("and both host and client would connect to localhost in minecraft");
-			System.exit(1);
+	public boolean isHosting() {
+		return hosting;
+	}
+
+	public synchronized void addHostingListener(HostingListener listener) {
+		hostingListener.add(listener);
+	}
+
+	public synchronized void addEventListener(EventListener listener) {
+		eventListener.add(listener);
+	}
+
+	private synchronized void fireEvent(String event) {
+		for (EventListener listener : eventListener) {
+			listener.handleEvent(event);
+		}
+	}
+
+	private synchronized void fireServerStarted() {
+		for (ServerStateListener listener : serverStateListener) {
+			listener.handleServerStarted();
+		}
+	}
+
+	private synchronized void fireServerStopped() {
+		for (ServerStateListener listener : serverStateListener) {
+			listener.handleServerStopped();
+		}
+	}
+
+	private synchronized void startServer(final String targetAddress,
+			final int targetPort, final int port) {
+		try {
+			serverSocket = new ServerSocket(port);
+		} catch (IOException e) {
+			fireEvent("Failed to start server: " + e.getMessage());
 			return;
 		}
-		String targetAddress = args[0];
-		int targetPort = Integer.parseInt(args[1]);
-		int port = Integer.parseInt(args[2]);
-		int periodInMS = Integer.parseInt(args[3]);
-		ServerSocket serverSocket = new ServerSocket(port);
-		System.out.println("Running:");
-		System.out.printf("Listening at port %d.%n", port);
-		System.out.printf(
-				"Forwarding data from and to %s:%d every %d milliseconds%n",
-				targetAddress, targetPort, periodInMS);
-		while (true) {
-			Socket socket = serverSocket.accept();
-			Socket secondSocket = null;
-			try {
-				secondSocket = new Socket(targetAddress, targetPort);
-			} finally {
-				if (secondSocket == null) {
-					socket.close();
-					System.err.printf("%s does not listen at %d!%n",
-							targetAddress, targetPort);
-					continue;
-				}
-			}
-			delayedTransfer(socket, secondSocket, periodInMS);
+		fireEvent(String.format("Started: Listening at port %d.%n", port));
+		fireServerStarted();
+
+		Thread thread;
+		thread = new ConnectionAcceptingThread(targetPort, targetAddress,
+				serverSocket, new ServerStateListener() {
+					@Override
+					public void handleServerStarted() {
+						fireServerStarted();
+					}
+
+					@Override
+					public void handleServerStopped() {
+						fireServerStopped();
+					}
+
+				}, new EventListener() {
+
+					@Override
+					public void handleEvent(String event) {
+						fireEvent(event);
+					}
+				});
+		thread.start();
+	}
+
+	public synchronized void setHosting(boolean hosting) {
+		this.hosting = hosting;
+		for (HostingListener listener : hostingListener) {
+			listener.handleHostingChanged();
 		}
 	}
 
-	public static void delayedTransfer(Socket s0, Socket s1, int periodInMS)
-			throws IOException {
-		pipeWithBuffer(s0.getInputStream(), s1.getOutputStream(), periodInMS);
-		pipeWithBuffer(s1.getInputStream(), s0.getOutputStream(), periodInMS);
+	public synchronized void startServer(String target,
+			String targetPortString, String portString) {
+		int targetPort;
+		try {
+			targetPort = Integer.parseInt(targetPortString);
+		} catch (NumberFormatException e) {
+			fireEvent(String.format("The string '%s' is not a valid port",
+					targetPortString));
+			return;
+		}
+		int port;
+		try {
+			port = Integer.parseInt(portString);
+		} catch (NumberFormatException e) {
+			fireEvent(String.format("The string '%s' is not a valid port",
+					portString));
+			return;
+		}
+		startServer(target, targetPort, port);
 	}
 
-	public static void pipeWithBuffer(final InputStream inputStream,
-			final OutputStream outputStream, final int periodInMS) {
-		final PeriodicWritingOuputStream writePeriodicWritingOuputStream = new PeriodicWritingOuputStream(
-				outputStream, periodInMS);
-		Thread reader = new Thread() {
-			final byte[] buffer = new byte[BUFFER_SIZE];
+	public synchronized void addServerStateListener(ServerStateListener listener) {
+		this.serverStateListener.add(listener);
+	}
 
-			@Override
-			public void run() {
-				try {
-					try {
-						int readedBytes;
-						do {
-							readedBytes = inputStream.read(buffer);
-							if (readedBytes != -1) {
-								writePeriodicWritingOuputStream.write(buffer,
-										0, readedBytes);
-							}
-						} while (readedBytes != -1);
-					} finally {
-						writePeriodicWritingOuputStream.sheduleClose();
-					}
-				} catch (IOException e) {
-					LOG.log(Level.INFO,
-							"Exception while reading: " + e.getMessage(), e);
-				}
+	public synchronized void stop() {
+		if (serverSocket != null) {
+			try {
+				serverSocket.close();
+				serverSocket = null;
+			} catch (IOException e) {
+				fireEvent("Could not stop server smothly: " + e.getMessage());
 			}
-		};
-		reader.start();
-
-		Thread writer = new Thread(writePeriodicWritingOuputStream);
-		writer.start();
+		}
 	}
 }
