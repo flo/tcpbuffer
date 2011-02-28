@@ -1,9 +1,16 @@
 package de.fkoeberle.tcpbuffer;
+
+import static java.util.logging.Logger.getLogger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PeriodicWritingOuputStream implements Runnable {
+	private static Logger LOG = getLogger(PeriodicWritingOuputStream.class
+			.getCanonicalName());
 	private final ByteArrayOutputStream buffer;
 	private volatile boolean closed;
 	private final OutputStream outputStream;
@@ -44,9 +51,13 @@ public class PeriodicWritingOuputStream implements Runnable {
 						outputStream.flush();
 					}
 				} catch (Exception e) {
-					System.err.println("Exiting earlier: " + e.getMessage());
 					if (e instanceof RuntimeException) {
-						e.printStackTrace();
+						LOG.log(Level.WARNING,
+								"Cought runtime exception: " + e.getMessage(),
+								e);
+					} else {
+						LOG.log(Level.INFO,
+								"Exiting earlier: " + e.getMessage());
 					}
 				}
 			}
@@ -54,8 +65,8 @@ public class PeriodicWritingOuputStream implements Runnable {
 			try {
 				outputStream.close();
 			} catch (IOException e) {
-				System.err
-						.println("Cought exception while closing output stream: "
+				LOG.log(Level.INFO,
+						"Cought exception while closing output stream: "
 								+ e.getMessage());
 			}
 		}
