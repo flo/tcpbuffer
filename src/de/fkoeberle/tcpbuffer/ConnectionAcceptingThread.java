@@ -67,12 +67,14 @@ final class ConnectionAcceptingThread extends Thread {
 
 	public void delayedTransfer(Socket s0, Socket s1, int periodInMS)
 			throws IOException {
-		pipeWithBuffer(s0.getInetAddress().toString(), s1.getInetAddress()
-				.toString(), s0.getInputStream(), s1.getOutputStream(),
-				periodInMS);
-		pipeWithBuffer(s1.getInetAddress().toString(), s0.getInetAddress()
-				.toString(), s1.getInputStream(), s0.getOutputStream(),
-				periodInMS);
+		final String s0Name = s0.getInetAddress().getHostAddress();
+		final String s1Name = s1.getInetAddress().getHostAddress();
+		eventListener.handleEvent(String.format(
+				"Forwarding data between %s and %s", s0Name, s1Name));
+		pipeWithBuffer(s0Name, s1Name, s0.getInputStream(),
+				s1.getOutputStream(), periodInMS);
+		pipeWithBuffer(s1Name, s0Name, s1.getInputStream(),
+				s0.getOutputStream(), periodInMS);
 	}
 
 	public void pipeWithBuffer(final String inputName, final String outputName,
