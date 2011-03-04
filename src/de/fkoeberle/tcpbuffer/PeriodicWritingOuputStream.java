@@ -11,27 +11,24 @@
  */
 package de.fkoeberle.tcpbuffer;
 
-import static java.util.logging.Logger.getLogger;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class PeriodicWritingOuputStream implements Runnable {
-	private static Logger LOG = getLogger(PeriodicWritingOuputStream.class
-			.getCanonicalName());
 	private final ByteArrayOutputStream buffer;
 	private volatile boolean closed;
 	private final OutputStream outputStream;
 	private final int periodInMS;
+	private final ConnectionEndListener connectionEndListener;
 
-	public PeriodicWritingOuputStream(OutputStream outputStream, int periodInMS) {
+	public PeriodicWritingOuputStream(OutputStream outputStream,
+			int periodInMS, ConnectionEndListener connectionEndListener) {
 		this.buffer = new ByteArrayOutputStream(32 * 1024);
 		this.closed = false;
 		this.outputStream = outputStream;
 		this.periodInMS = periodInMS;
+		this.connectionEndListener = connectionEndListener;
 	}
 
 	public void write(byte[] data, int offset, int length) {
@@ -61,24 +58,18 @@ public class PeriodicWritingOuputStream implements Runnable {
 						outputStream.write(dataToWrite);
 						outputStream.flush();
 					}
-				} catch (Exception e) {
-					if (e instanceof RuntimeException) {
-						LOG.log(Level.WARNING,
-								"Cought runtime exception: " + e.getMessage(),
-								e);
-					} else {
-						LOG.log(Level.INFO,
-								"Exiting earlier: " + e.getMessage());
-					}
+				} catch (Throwable e) {
+					connectionEndListener.handleConnectionEnds(e.getMessage());
 				}
 			}
 		} finally {
 			try {
 				outputStream.close();
 			} catch (IOException e) {
-				LOG.log(Level.INFO,
-						"Cought exception while closing output stream: "
-								+ e.getMessage());
+				// Exception no use to user:
+				// Exception will not get handled anywhere,
+				// but from IDEs watching for RuntimeExceptions
+				throw new RuntimeException(e);
 			}
 		}
 	}

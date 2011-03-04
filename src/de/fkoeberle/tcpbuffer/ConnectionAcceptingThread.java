@@ -47,7 +47,7 @@ final class ConnectionAcceptingThread extends Thread {
 					if (secondSocket == null) {
 						socket.close();
 						final String message = String
-								.format("Could not connect to server: %s does not listen at %d!%n",
+								.format("Could not connect to server: %s does not listen at %d!",
 										targetAddress, targetPort);
 						eventListener.handleEvent(message);
 						continue;
@@ -71,17 +71,19 @@ final class ConnectionAcceptingThread extends Thread {
 		final String s1Name = s1.getInetAddress().getHostAddress();
 		eventListener.handleEvent(String.format(
 				"Forwarding data between %s and %s", s0Name, s1Name));
-		pipeWithBuffer(s0Name, s1Name, s0.getInputStream(),
-				s1.getOutputStream(), periodInMS);
-		pipeWithBuffer(s1Name, s0Name, s1.getInputStream(),
-				s0.getOutputStream(), periodInMS);
+		ConnectionEndListener connectionEndListener = new ConnectionEndListener(
+				s0Name, s1Name, eventListener);
+		pipeWithBuffer(s0.getInputStream(), s1.getOutputStream(), periodInMS,
+				connectionEndListener);
+		pipeWithBuffer(s1.getInputStream(), s0.getOutputStream(), periodInMS,
+				connectionEndListener);
 	}
 
-	public void pipeWithBuffer(final String inputName, final String outputName,
-			final InputStream inputStream, final OutputStream outputStream,
-			final int periodInMS) {
+	public void pipeWithBuffer(final InputStream inputStream,
+			final OutputStream outputStream, final int periodInMS,
+			final ConnectionEndListener connectionEndListener) {
 		final PeriodicWritingOuputStream writePeriodicWritingOuputStream = new PeriodicWritingOuputStream(
-				outputStream, periodInMS);
+				outputStream, periodInMS, connectionEndListener);
 		Thread reader = new Thread() {
 			private static final int BUFFER_SIZE = 32 * 1024;
 			final byte[] buffer = new byte[BUFFER_SIZE];
@@ -102,9 +104,7 @@ final class ConnectionAcceptingThread extends Thread {
 						writePeriodicWritingOuputStream.sheduleClose();
 					}
 				} catch (Throwable e) {
-					eventListener.handleEvent(String.format(
-							"No longer forwarding data from %s to %s: %s",
-							inputName, outputName, e.getMessage()));
+					connectionEndListener.handleConnectionEnds(e.getMessage());
 				}
 			}
 		};

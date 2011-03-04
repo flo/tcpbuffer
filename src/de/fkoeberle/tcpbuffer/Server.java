@@ -61,7 +61,7 @@ public class Server {
 			fireEvent("Failed to start server: " + e.getMessage());
 			return;
 		}
-		fireEvent(String.format("Started: Listening at port %d.%n", port));
+		fireEvent(String.format("Started: Listening at port %d.", port));
 		fireServerStarted();
 
 		Thread thread;

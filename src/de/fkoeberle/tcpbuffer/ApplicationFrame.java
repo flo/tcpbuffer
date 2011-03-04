@@ -69,7 +69,6 @@ public class ApplicationFrame extends JFrame {
 	private JPanel jPanel3;
 	private ButtonGroup buttonGroup1;
 	private JRadioButton radioButtonYes;
-	private static final String MINECRAFT_DEFAULT_PORT_STRING = "25565";
 	private final Server server;
 	private JButton stopButton;
 	private static final String PREFERRED_LOOK_AND_FEEL = "javax.swing.plaf.metal.MetalLookAndFeel";
@@ -276,7 +275,7 @@ public class ApplicationFrame extends JFrame {
 	private JTextField getJTextField3() {
 		if (serverProxyPort == null) {
 			serverProxyPort = new JTextField();
-			serverProxyPort.setText("25500");
+			serverProxyPort.setText(Constants.DEFAULT_PORT_STRING);
 		}
 		return serverProxyPort;
 	}
@@ -292,7 +291,8 @@ public class ApplicationFrame extends JFrame {
 	private JTextField getJTextField2() {
 		if (serverMinecraftPort == null) {
 			serverMinecraftPort = new JTextField();
-			serverMinecraftPort.setText("25565");
+			serverMinecraftPort
+					.setText(Constants.MINECRAFT_DEFAULT_PORT_STRING);
 		}
 		return serverMinecraftPort;
 	}
@@ -467,7 +467,7 @@ public class ApplicationFrame extends JFrame {
 		} else {
 			target = clientServerToConnect.getText();
 			targetPortString = clientPortToConnect.getText();
-			portString = MINECRAFT_DEFAULT_PORT_STRING;
+			portString = Constants.MINECRAFT_DEFAULT_PORT_STRING;
 		}
 		server.startServer(target, targetPortString, portString);
 	}
