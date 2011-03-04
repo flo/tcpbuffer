@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
 	private boolean hosting;
@@ -22,6 +23,7 @@ public class Server {
 	private final List<EventListener> eventListener = new ArrayList<EventListener>();
 	private final List<ServerStateListener> serverStateListener = new ArrayList<ServerStateListener>();
 	private ServerSocket serverSocket;
+	private final AtomicInteger periodInMS = new AtomicInteger(50);
 
 	public boolean isHosting() {
 		return hosting;
@@ -54,7 +56,7 @@ public class Server {
 	}
 
 	private synchronized void startServer(final String targetAddress,
-			final int targetPort, final int port, int periodInMS) {
+			final int targetPort, final int port) {
 		try {
 			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
@@ -95,7 +97,7 @@ public class Server {
 	}
 
 	public synchronized void startServer(String target,
-			String targetPortString, String portString, String periodString) {
+			String targetPortString, String portString) {
 		int targetPort;
 		try {
 			targetPort = Integer.parseInt(targetPortString);
@@ -112,25 +114,7 @@ public class Server {
 					portString));
 			return;
 		}
-		if (!periodString.endsWith("ms")) {
-			fireEvent(String
-					.format("The specfied period duration of '%s' does not end with 'ms'",
-							periodString));
-			return;
-		}
-		int periodInMS;
-		final String periodStringWihtoutMS = periodString.substring(0,
-				periodString.length() - 2);
-		try {
-			periodInMS = Integer.parseInt(periodStringWihtoutMS);
-		} catch (NumberFormatException e) {
-			fireEvent(String
-					.format("The specfied period duration of '%s' is not an integer followed by 'ms'",
-							periodString));
-			return;
-		}
-
-		startServer(target, targetPort, port, periodInMS);
+		startServer(target, targetPort, port);
 	}
 
 	public synchronized void addServerStateListener(ServerStateListener listener) {
@@ -146,5 +130,28 @@ public class Server {
 				fireEvent("Could not stop server smothly: " + e.getMessage());
 			}
 		}
+	}
+
+	public synchronized void setPeriodInMS(String periodString) {
+		if (!periodString.endsWith("ms")) {
+			fireEvent(String
+					.format("The specfied period duration of '%s' does not end with 'ms'",
+							periodString));
+			return;
+		}
+		final String periodStringWihtoutMS = periodString.substring(0,
+				periodString.length() - 2);
+		try {
+			periodInMS.set(Integer.parseInt(periodStringWihtoutMS));
+		} catch (NumberFormatException e) {
+			fireEvent(String
+					.format("The specfied period duration of '%s' is not an integer followed by 'ms'",
+							periodString));
+			return;
+		}
+		fireEvent(String
+				.format("The period for package forwarding has been set to "
+						+ periodString));
+
 	}
 }

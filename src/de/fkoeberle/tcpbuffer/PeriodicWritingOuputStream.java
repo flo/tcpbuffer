@@ -14,16 +14,18 @@ package de.fkoeberle.tcpbuffer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PeriodicWritingOuputStream implements Runnable {
 	private final ByteArrayOutputStream buffer;
 	private volatile boolean closed;
 	private final OutputStream outputStream;
-	private final int periodInMS;
+	private final AtomicInteger periodInMS;
 	private final ConnectionEndListener connectionEndListener;
 
 	public PeriodicWritingOuputStream(OutputStream outputStream,
-			int periodInMS, ConnectionEndListener connectionEndListener) {
+			AtomicInteger periodInMS,
+			ConnectionEndListener connectionEndListener) {
 		this.buffer = new ByteArrayOutputStream(32 * 1024);
 		this.closed = false;
 		this.outputStream = outputStream;
@@ -47,7 +49,7 @@ public class PeriodicWritingOuputStream implements Runnable {
 			boolean done = false;
 			while (!done) {
 				try {
-					Thread.sleep(periodInMS);
+					Thread.sleep(periodInMS.get());
 					byte[] dataToWrite;
 					synchronized (buffer) {
 						dataToWrite = buffer.toByteArray();

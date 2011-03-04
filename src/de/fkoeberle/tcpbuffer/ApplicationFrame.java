@@ -71,8 +71,11 @@ public class ApplicationFrame extends JFrame {
 	private JRadioButton radioButtonYes;
 	private final Server server;
 	private JButton stopButton;
+	private JLabel jLabel9;
+	private JLabel jLabel10;
+	private JButton applyPeriodButton;
+	private JTextField periodTextField;
 	private static final String PREFERRED_LOOK_AND_FEEL = "javax.swing.plaf.metal.MetalLookAndFeel";
-
 	public ApplicationFrame() {
 		initComponents();
 		this.server = new Server();
@@ -139,7 +142,45 @@ public class ApplicationFrame extends JFrame {
 		add(getJPanel3(), new Constraints(new Bilateral(0, 0, 0),
 				new Bilateral(201, 0, 0)));
 		initButtonGroup1();
-		setSize(449, 430);
+		setSize(522, 510);
+	}
+
+	private JTextField getJTextField4() {
+		if (periodTextField == null) {
+			periodTextField = new JTextField();
+			periodTextField.setText("50ms");
+		}
+		return periodTextField;
+	}
+
+	private JButton getJButton1() {
+		if (applyPeriodButton == null) {
+			applyPeriodButton = new JButton();
+			applyPeriodButton.setText("Apply");
+			applyPeriodButton.addActionListener(new ActionListener() {
+
+				public void actionPerformed(ActionEvent event) {
+					applyPeriodButtonActionActionPerformed(event);
+				}
+			});
+		}
+		return applyPeriodButton;
+	}
+
+	private JLabel getJLabel10() {
+		if (jLabel10 == null) {
+			jLabel10 = new JLabel();
+			jLabel10.setText("A lower period can make things a little better or much worse!");
+		}
+		return jLabel10;
+	}
+
+	private JLabel getJLabel9() {
+		if (jLabel9 == null) {
+			jLabel9 = new JLabel();
+			jLabel9.setText("7. If this worked great for you can try a lower period duration:");
+		}
+		return jLabel9;
 	}
 
 	private JButton getStopButton() {
@@ -194,6 +235,14 @@ public class ApplicationFrame extends JFrame {
 					new Bilateral(24, 12, 33), new Leading(122, 101, 10, 10)));
 			jPanel3.add(getStopButton(), new Constraints(new Leading(106, 12,
 					12), new Leading(21, 12, 12)));
+			jPanel3.add(getJLabel9(), new Constraints(new Leading(12, 12, 12),
+					new Leading(235, 12, 12)));
+			jPanel3.add(getJLabel10(), new Constraints(new Leading(24, 12, 12),
+					new Leading(256, 12, 12)));
+			jPanel3.add(getJButton1(), new Constraints(new Leading(90, 12, 12),
+					new Leading(277, 12, 12)));
+			jPanel3.add(getJTextField4(), new Constraints(new Leading(24, 54,
+					12, 12), new Leading(280, 12, 12)));
 		}
 		return jPanel3;
 	}
@@ -469,9 +518,7 @@ public class ApplicationFrame extends JFrame {
 			targetPortString = clientPortToConnect.getText();
 			portString = Constants.MINECRAFT_DEFAULT_PORT_STRING;
 		}
-		final String periodString = System.getProperty(
-				Constants.PERIOD_PROPERTY, Constants.PERIOID_DEFAULT_VALUE);
-		server.startServer(target, targetPortString, portString, periodString);
+		server.startServer(target, targetPortString, portString);
 	}
 
 	private void stopButtonActionActionPerformed(ActionEvent event) {
@@ -484,5 +531,9 @@ public class ApplicationFrame extends JFrame {
 
 	private void radioButtonNoActionActionPerformed(ActionEvent event) {
 		server.setHosting(false);
+	}
+
+	private void applyPeriodButtonActionActionPerformed(ActionEvent event) {
+		server.setPeriodInMS(periodTextField.getText());
 	}
 }

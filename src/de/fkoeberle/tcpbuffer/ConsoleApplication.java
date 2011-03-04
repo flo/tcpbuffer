@@ -27,10 +27,10 @@ public class ConsoleApplication {
 				System.out.println(event);
 			}
 		});
-
-		server.startServer(targetAddress, targetPortString, portString,
-				periodString);
-
+		if (!periodString.equals(Constants.PERIOID_DEFAULT_VALUE)) {
+			server.setPeriodInMS(periodString);
+		}
+		server.startServer(targetAddress, targetPortString, portString);
 	}
 
 	public static String getProperty(String property, String defaultValue) {

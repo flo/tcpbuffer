@@ -16,24 +16,25 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 
 final class ConnectionAcceptingThread extends Thread {
 	private final int targetPort;
 	private final String targetAddress;
 	private final ServerSocket serverSocket;
-	private final int periodInMS;
+	private final AtomicInteger periodInMS;
 	private final ServerStateListener serverStateListener;
 	private final EventListener eventListener;
 
 	ConnectionAcceptingThread(int targetPort, String targetAddress,
-			ServerSocket serverSocket, int periodInMS,
+			ServerSocket serverSocket, AtomicInteger periodInMS2,
 			ServerStateListener serverStateListener, EventListener eventListener) {
 		this.targetPort = targetPort;
 		this.targetAddress = targetAddress;
 		this.serverSocket = serverSocket;
 		this.serverStateListener = serverStateListener;
 		this.eventListener = eventListener;
-		this.periodInMS = periodInMS;
+		this.periodInMS = periodInMS2;
 	}
 
 	@Override
@@ -66,7 +67,7 @@ final class ConnectionAcceptingThread extends Thread {
 		}
 	}
 
-	public void delayedTransfer(Socket s0, Socket s1, int periodInMS)
+	public void delayedTransfer(Socket s0, Socket s1, AtomicInteger periodInMS2)
 			throws IOException {
 		final String s0Name = s0.getInetAddress().getHostAddress();
 		final String s1Name = s1.getInetAddress().getHostAddress();
@@ -74,14 +75,14 @@ final class ConnectionAcceptingThread extends Thread {
 				"Forwarding data between %s and %s", s0Name, s1Name));
 		ConnectionEndListener connectionEndListener = new ConnectionEndListener(
 				s0Name, s1Name, eventListener);
-		pipeWithBuffer(s0.getInputStream(), s1.getOutputStream(), periodInMS,
+		pipeWithBuffer(s0.getInputStream(), s1.getOutputStream(), periodInMS2,
 				connectionEndListener);
-		pipeWithBuffer(s1.getInputStream(), s0.getOutputStream(), periodInMS,
+		pipeWithBuffer(s1.getInputStream(), s0.getOutputStream(), periodInMS2,
 				connectionEndListener);
 	}
 
 	public void pipeWithBuffer(final InputStream inputStream,
-			final OutputStream outputStream, final int periodInMS,
+			final OutputStream outputStream, final AtomicInteger periodInMS,
 			final ConnectionEndListener connectionEndListener) {
 		final PeriodicWritingOuputStream writePeriodicWritingOuputStream = new PeriodicWritingOuputStream(
 				outputStream, periodInMS, connectionEndListener);
