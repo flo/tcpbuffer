@@ -469,7 +469,9 @@ public class ApplicationFrame extends JFrame {
 			targetPortString = clientPortToConnect.getText();
 			portString = Constants.MINECRAFT_DEFAULT_PORT_STRING;
 		}
-		server.startServer(target, targetPortString, portString);
+		final String periodString = System.getProperty(
+				Constants.PERIOD_PROPERTY, Constants.PERIOID_DEFAULT_VALUE);
+		server.startServer(target, targetPortString, portString, periodString);
 	}
 
 	private void stopButtonActionActionPerformed(ActionEvent event) {

@@ -54,7 +54,7 @@ public class Server {
 	}
 
 	private synchronized void startServer(final String targetAddress,
-			final int targetPort, final int port) {
+			final int targetPort, final int port, int periodInMS) {
 		try {
 			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
@@ -66,7 +66,7 @@ public class Server {
 
 		Thread thread;
 		thread = new ConnectionAcceptingThread(targetPort, targetAddress,
-				serverSocket, new ServerStateListener() {
+				serverSocket, periodInMS, new ServerStateListener() {
 					@Override
 					public void handleServerStarted() {
 						fireServerStarted();
@@ -95,7 +95,7 @@ public class Server {
 	}
 
 	public synchronized void startServer(String target,
-			String targetPortString, String portString) {
+			String targetPortString, String portString, String periodString) {
 		int targetPort;
 		try {
 			targetPort = Integer.parseInt(targetPortString);
@@ -112,7 +112,25 @@ public class Server {
 					portString));
 			return;
 		}
-		startServer(target, targetPort, port);
+		if (!periodString.endsWith("ms")) {
+			fireEvent(String
+					.format("The specfied period duration of '%s' does not end with 'ms'",
+							periodString));
+			return;
+		}
+		int periodInMS;
+		final String periodStringWihtoutMS = periodString.substring(0,
+				periodString.length() - 2);
+		try {
+			periodInMS = Integer.parseInt(periodStringWihtoutMS);
+		} catch (NumberFormatException e) {
+			fireEvent(String
+					.format("The specfied period duration of '%s' is not an integer followed by 'ms'",
+							periodString));
+			return;
+		}
+
+		startServer(target, targetPort, port, periodInMS);
 	}
 
 	public synchronized void addServerStateListener(ServerStateListener listener) {

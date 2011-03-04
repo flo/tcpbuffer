@@ -17,7 +17,8 @@ public class ConsoleApplication {
 		String targetPortString = getProperty("target.port",
 				Constants.MINECRAFT_DEFAULT_PORT_STRING);
 		String portString = getProperty("port", Constants.DEFAULT_PORT_STRING);
-
+		String periodString = getProperty(Constants.PERIOD_PROPERTY,
+				Constants.PERIOID_DEFAULT_VALUE);
 		Server server = new Server();
 		server.addEventListener(new EventListener() {
 
@@ -27,7 +28,8 @@ public class ConsoleApplication {
 			}
 		});
 
-		server.startServer(targetAddress, targetPortString, portString);
+		server.startServer(targetAddress, targetPortString, portString,
+				periodString);
 
 	}
 

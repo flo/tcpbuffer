@@ -14,5 +14,6 @@ package de.fkoeberle.tcpbuffer;
 public class Constants {
 	public static final String MINECRAFT_DEFAULT_PORT_STRING = "25565";
 	public static final String DEFAULT_PORT_STRING = "25500";
-
+	public static final String PERIOID_DEFAULT_VALUE = "50ms";
+	public static final String PERIOD_PROPERTY = "period";
 }

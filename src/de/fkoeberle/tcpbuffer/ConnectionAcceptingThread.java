@@ -21,18 +21,19 @@ final class ConnectionAcceptingThread extends Thread {
 	private final int targetPort;
 	private final String targetAddress;
 	private final ServerSocket serverSocket;
-	private final int periodInMS = 50;
+	private final int periodInMS;
 	private final ServerStateListener serverStateListener;
 	private final EventListener eventListener;
 
 	ConnectionAcceptingThread(int targetPort, String targetAddress,
-			ServerSocket serverSocket, ServerStateListener serverStateListener,
-			EventListener eventListener) {
+			ServerSocket serverSocket, int periodInMS,
+			ServerStateListener serverStateListener, EventListener eventListener) {
 		this.targetPort = targetPort;
 		this.targetAddress = targetAddress;
 		this.serverSocket = serverSocket;
 		this.serverStateListener = serverStateListener;
 		this.eventListener = eventListener;
+		this.periodInMS = periodInMS;
 	}
 
 	@Override
